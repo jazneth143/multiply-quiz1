@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Blitz</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --card-bg: #111111;
+            --accent: #34d399; /* Emerald Green */
+            --text: #ffffff;
+            --key-bg: #222222;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevents bouncing on mobile */
+            touch-action: manipulation;
+        }
+
+        /* --- Screens --- */
+        .screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- UI Elements --- */
+        #timer-container {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        #timer-progress {
+            height: 100%;
+            background: var(--accent);
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .stats-header {
+            position: absolute;
+            top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .flash-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 350px;
+            padding: 40px 20px;
+            border-radius: 30px;
+            text-align: center;
+            margin-bottom: auto;
+            margin-top: 60px;
+            border: 1px solid #333;
+        }
+
+        #equation {
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        #answer-display {
+            font-size: 3rem;
+            height: 60px;
+            margin-top: 10px;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* --- Mobile Optimized Keyboard --- */
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 400px;
+            padding-bottom: 30px; /* Padding for gesture bars on iPhones */
+        }
+
+        .key {
+            background: var(--key-bg);
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: white;
+            transition: background 0.1s, transform 0.05s;
+        }
+
+        .key:active {
+            background: #444;
+            transform: scale(0.95);
+        }
+
+        .key.enter {
+            background: var(--accent);
+            color: black;
+            grid-column: span 2;
+        }
+
+        .key.del {
+            color: #ff4d4d;
+        }
+
+        /* --- Menu Buttons --- */
+        .menu-btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 20px;
+            margin: 10px 0;
+            background: var(--key-bg);
+            color: white;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .menu-btn:active { background: #333; }
+
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen" class="screen">
+        <h1 style="margin-bottom: 5px;">Math Blitz</h1>
+        <p style="color: #666; margin-bottom: 30px;">Randomized 1-9</p>
+        <button class="menu-btn" onclick="startGame(10)">🐢 Relaxed (10s)</button>
+        <button class="menu-btn" onclick="startGame(5)">⚡ Standard (5s)</button>
+        <button class="menu-btn" onclick="startGame(3)">🔥 Insane (3s)</button>
+        <p style="margin-top: 40px; color: #444;">Personal Best: <span id="hi-score-display">0</span></p>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+        <div id="timer-container"><div id="timer-progress"></div></div>
+        
+        <div class="stats-header">
+            <span>SCORE: <b id="score">0</b></span>
+            <span>BEST: <b id="best">0</b></span>
+        </div>
+
+        <div class="flash-card">
+            <div id="equation">-- × --</div>
+            <div id="answer-display"></div>
+        </div>
+
+        <div class="keyboard">
+            <div class="key" onclick="tap('1')">1</div>
+            <div class="key" onclick="tap('2')">2</div>
+            <div class="key" onclick="tap('3')">3</div>
+            <div class="key" onclick="tap('4')">4</div>
+            <div class="key" onclick="tap('5')">5</div>
+            <div class="key" onclick="tap('6')">6</div>
+            <div class="key" onclick="tap('7')">7</div>
+            <div class="key" onclick="tap('8')">8</div>
+            <div class="key" onclick="tap('9')">9</div>
+            <div class="key del" onclick="tap('C')">C</div>
+            <div class="key" onclick="tap('0')">0</div>
+            <div class="key enter" onclick="tap('E')">ENTER</div>
+        </div>
+    </div>
+
+    <script>
+        let deck = [];
+        let curIdx = 0;
+        let input = "";
+        let time = 5;
+        let timer;
+        let score = 0;
+        let hiScore = localStorage.getItem('mathHiScore') || 0;
+
+        document.getElementById('hi-score-display').innerText = hiScore;
+
+        function makeDeck() {
+            let d = [];
+            for(let i=1; i<=9; i++) {
+                for(let j=1; j<=9; j++) d.push({n1:i, n2:j, a:i*j});
+            }
+            return d.sort(() => Math.random() - 0.5);
+        }
+
+        function startGame(s) {
+            time = s;
+            score = 0;
+            deck = makeDeck();
+            curIdx = 0;
+            document.getElementById('score').innerText = 0;
+            document.getElementById('best').innerText = hiScore;
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            ask();
+        }
+
+        function ask() {
+            if(curIdx >= deck.length) { deck = makeDeck(); curIdx = 0; }
+            input = "";
+            document.getElementById('answer-display').innerText = "";
+            document.getElementById('equation').innerText = `${deck[curIdx].n1} × ${deck[curIdx].n2}`;
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            const bar = document.getElementById('timer-progress');
+            let start = Date.now();
+            timer = setInterval(() => {
+                let rem = (time * 1000) - (Date.now() - start);
+                bar.style.width = (rem / (time * 1000) * 100) + "%";
+                if(rem <= 0) end("Time's up!");
+            }, 30);
+        }
+
+        function tap(k) {
+            if(k === 'C') input = "";
+            else if(k === 'E') {
+                if(parseInt(input) === deck[curIdx].a) {
+                    score++;
+                    curIdx++;
+                    document.getElementById('score').innerText = score;
+                    ask();
+                } else { end("Wrong!"); }
+                return;
+            } else {
+                if(input.length < 2) input += k;
+            }
+            document.getElementById('answer-display').innerText = input;
+        }
+
+        function end(msg) {
+            clearInterval(timer);
+            if(score > hiScore) {
+                hiScore = score;
+                localStorage.setItem('mathHiScore', hiScore);
+                alert(`New High Score: ${score}!`);
+            } else {
+                alert(`${msg}\nScore: ${score}`);
+            }
+            document.getElementById('hi-score-display').innerText = hiScore;
+            document.getElementById('setup-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
