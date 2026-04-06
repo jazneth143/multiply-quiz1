@@ -3,179 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Blitz</title>
+    <title>Math Blitz Pro</title>
     <style>
         :root {
-            --bg: #000000;
-            --card-bg: #111111;
-            --accent: #34d399; /* Emerald Green */
-            --text: #ffffff;
-            --key-bg: #222222;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #10b981;
+            --text: #f8fafc;
+            --danger: #ef4444;
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden; /* Prevents bouncing on mobile */
+            overflow: hidden;
             touch-action: manipulation;
         }
 
-        /* --- Screens --- */
-        .screen {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            justify-content: center;
-            align-items: center;
-        }
-
+        .screen { flex: 1; display: flex; flex-direction: column; padding: 20px; align-items: center; justify-content: flex-start; }
         .hidden { display: none !important; }
 
-        /* --- UI Elements --- */
-        #timer-container {
+        /* --- History Section --- */
+        #setup-screen h1 { font-size: 2.8rem; margin: 40px 0 10px; color: var(--accent); font-weight: 900; }
+        
+        .history-container {
             width: 100%;
-            height: 6px;
-            background: #333;
-            position: fixed;
-            top: 0;
-            left: 0;
+            max-width: 380px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid #334155;
         }
 
-        #timer-progress {
-            height: 100%;
-            background: var(--accent);
-            width: 100%;
-            transition: width 0.1s linear;
-        }
+        .history-header { display: flex; justify-content: space-between; padding: 5px 10px; font-weight: bold; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid #334155; }
+        #history-list { max-height: 200px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid #1e293b; font-size: 1rem; }
 
-        .stats-header {
-            position: absolute;
-            top: 20px;
-            display: flex;
-            justify-content: space-between;
-            width: 90%;
-            font-size: 0.9rem;
-            color: #888;
-        }
-
+        /* --- Game Interface --- */
+        #timer-bar { position: fixed; top: 0; left: 0; height: 10px; background: var(--accent); width: 100%; z-index: 100; box-shadow: 0 0 15px var(--accent); }
+        
         .flash-card {
             background: var(--card-bg);
             width: 100%;
-            max-width: 350px;
+            max-width: 380px;
             padding: 40px 20px;
             border-radius: 30px;
             text-align: center;
-            margin-bottom: auto;
-            margin-top: 60px;
-            border: 1px solid #333;
+            margin: 60px 0 30px 0;
+            border: 1px solid #334155;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
         }
 
-        #equation {
-            font-size: 4.5rem;
-            font-weight: 800;
-            margin: 0;
+        #equation { font-size: 5rem; font-weight: 900; margin: 0; color: #fff; }
+        #answer-display { font-size: 4rem; height: 80px; color: var(--accent); font-weight: bold; margin-top: 10px; }
+
+        /* --- Keyboard (Shifted for iPad) --- */
+        .keyboard { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+            width: 100%; 
+            max-width: 400px; 
+            margin-bottom: 100px; /* High enough to avoid iPad gesture bar */
         }
-
-        #answer-display {
-            font-size: 3rem;
-            height: 60px;
-            margin-top: 10px;
-            color: var(--accent);
-            font-weight: bold;
+        
+        .key { 
+            background: #334155; 
+            height: 80px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 20px; 
+            font-size: 2.2rem; 
+            font-weight: bold; 
+            color: #fff;
+            border-bottom: 5px solid #0f172a;
         }
+        
+        .key:active { background: #475569; border-bottom-width: 2px; transform: translateY(3px); }
+        .key.del { color: var(--danger); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- Mobile Optimized Keyboard --- */
-        .keyboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            width: 100%;
-            max-width: 400px;
-            padding-bottom: 30px; /* Padding for gesture bars on iPhones */
+        /* --- Buttons --- */
+        .mode-btn {
+            width: 100%; max-width: 340px; padding: 20px; margin: 8px 0;
+            background: #1e293b; color: white; border: 1px solid #334155;
+            border-radius: 18px; font-size: 1.2rem; font-weight: bold;
         }
-
-        .key {
-            background: var(--key-bg);
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: white;
-            transition: background 0.1s, transform 0.05s;
-        }
-
-        .key:active {
-            background: #444;
-            transform: scale(0.95);
-        }
-
-        .key.enter {
-            background: var(--accent);
-            color: black;
-            grid-column: span 2;
-        }
-
-        .key.del {
-            color: #ff4d4d;
-        }
-
-        /* --- Menu Buttons --- */
-        .menu-btn {
-            width: 100%;
-            max-width: 300px;
-            padding: 20px;
-            margin: 10px 0;
-            background: var(--key-bg);
-            color: white;
-            border: 1px solid #333;
-            border-radius: 15px;
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        .menu-btn:active { background: #333; }
-
+        .mode-btn:active { background: #334155; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen" class="screen">
-        <h1 style="margin-bottom: 5px;">Math Blitz</h1>
-        <p style="color: #666; margin-bottom: 30px;">Randomized 1-9</p>
-        <button class="menu-btn" onclick="startGame(10)">🐢 Relaxed (10s)</button>
-        <button class="menu-btn" onclick="startGame(5)">⚡ Standard (5s)</button>
-        <button class="menu-btn" onclick="startGame(3)">🔥 Insane (3s)</button>
-        <p style="margin-top: 40px; color: #444;">Personal Best: <span id="hi-score-display">0</span></p>
+        <h1>Math Blitz</h1>
+        <button class="mode-btn" onclick="startGame(10, 'Relaxed')">🐢 Relaxed (10s)</button>
+        <button class="mode-btn" onclick="startGame(5, 'Standard')">⚡ Standard (5s)</button>
+        <button class="mode-btn" onclick="startGame(3, 'Insane')">🔥 Insane (3s)</button>
+
+        <div class="history-container">
+            <div class="history-header"><span>MODE</span><span>SCORE</span><span>DATE</span></div>
+            <div id="history-list"></div>
+        </div>
     </div>
 
     <div id="game-screen" class="screen hidden">
-        <div id="timer-container"><div id="timer-progress"></div></div>
-        
-        <div class="stats-header">
-            <span>SCORE: <b id="score">0</b></span>
-            <span>BEST: <b id="best">0</b></span>
-        </div>
-
+        <div id="timer-bar"></div>
         <div class="flash-card">
-            <div id="equation">-- × --</div>
-            <div id="answer-display"></div>
+            <div id="equation">? × ?</div>
+            <div id="answer-display">_</div>
         </div>
-
         <div class="keyboard">
             <div class="key" onclick="tap('1')">1</div>
             <div class="key" onclick="tap('2')">2</div>
@@ -186,22 +130,26 @@
             <div class="key" onclick="tap('7')">7</div>
             <div class="key" onclick="tap('8')">8</div>
             <div class="key" onclick="tap('9')">9</div>
-            <div class="key del" onclick="tap('C')">C</div>
+            <div class="key del" onclick="tap('C')">Clear</div>
             <div class="key" onclick="tap('0')">0</div>
-            <div class="key enter" onclick="tap('E')">ENTER</div>
         </div>
     </div>
 
     <script>
-        let deck = [];
-        let curIdx = 0;
-        let input = "";
-        let time = 5;
-        let timer;
-        let score = 0;
-        let hiScore = localStorage.getItem('mathHiScore') || 0;
+        let deck = [], curIdx = 0, input = "", timeLimit = 5, modeName = "Standard";
+        let timer, score = 0;
+        let history = JSON.parse(localStorage.getItem('mathHistory')) || [];
 
-        document.getElementById('hi-score-display').innerText = hiScore;
+        function updateHistoryUI() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = history.length === 0 ? '<div style="text-align:center; padding:20px; color:#475569;">No attempts recorded</div>' : '';
+            history.slice().reverse().forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `<span>${item.mode}</span><b>${item.score}</b><span style="color:#64748b">${item.date}</span>`;
+                list.appendChild(div);
+            });
+        }
 
         function makeDeck() {
             let d = [];
@@ -211,13 +159,9 @@
             return d.sort(() => Math.random() - 0.5);
         }
 
-        function startGame(s) {
-            time = s;
-            score = 0;
-            deck = makeDeck();
-            curIdx = 0;
-            document.getElementById('score').innerText = 0;
-            document.getElementById('best').innerText = hiScore;
+        function startGame(s, label) {
+            timeLimit = s; modeName = label; score = 0;
+            deck = makeDeck(); curIdx = 0;
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
             ask();
@@ -233,44 +177,53 @@
 
         function startTimer() {
             clearInterval(timer);
-            const bar = document.getElementById('timer-progress');
+            const bar = document.getElementById('timer-bar');
             let start = Date.now();
             timer = setInterval(() => {
-                let rem = (time * 1000) - (Date.now() - start);
-                bar.style.width = (rem / (time * 1000) * 100) + "%";
-                if(rem <= 0) end("Time's up!");
+                let rem = (timeLimit * 1000) - (Date.now() - start);
+                bar.style.width = (rem / (timeLimit * 1000) * 100) + "%";
+                if(rem <= 0) end();
             }, 30);
         }
 
         function tap(k) {
-            if(k === 'C') input = "";
-            else if(k === 'E') {
-                if(parseInt(input) === deck[curIdx].a) {
-                    score++;
-                    curIdx++;
-                    document.getElementById('score').innerText = score;
-                    ask();
-                } else { end("Wrong!"); }
+            if(k === 'C') {
+                input = "";
+                document.getElementById('answer-display').innerText = "";
                 return;
-            } else {
-                if(input.length < 2) input += k;
             }
-            document.getElementById('answer-display').innerText = input;
+            
+            // Allow typing up to 2 digits
+            if (input.length < 2) {
+                input += k;
+                document.getElementById('answer-display').innerText = input;
+            }
+            
+            // Check if correct (no game over for typos, just wait for correct answer or time out)
+            if (parseInt(input) === deck[curIdx].a) {
+                score++;
+                curIdx++;
+                ask();
+            }
         }
 
-        function end(msg) {
+        function end() {
             clearInterval(timer);
-            if(score > hiScore) {
-                hiScore = score;
-                localStorage.setItem('mathHiScore', hiScore);
-                alert(`New High Score: ${score}!`);
-            } else {
-                alert(`${msg}\nScore: ${score}`);
-            }
-            document.getElementById('hi-score-display').innerText = hiScore;
+            const target = deck[curIdx].a;
+            const now = new Date();
+            const dateStr = (now.getMonth()+1) + "/" + now.getDate();
+            
+            history.push({ mode: modeName, score: score, date: dateStr });
+            localStorage.setItem('mathHistory', JSON.stringify(history));
+            
+            alert(`TIME'S UP!\nThe answer was ${target}.\nFinal Score: ${score}`);
+            
+            updateHistoryUI();
             document.getElementById('setup-screen').classList.remove('hidden');
             document.getElementById('game-screen').classList.add('hidden');
         }
+
+        updateHistoryUI();
     </script>
 </body>
 </html>
